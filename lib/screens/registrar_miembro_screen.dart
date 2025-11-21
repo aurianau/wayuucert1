@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../database/app_database.dart';
+import '../database/entities/miembro_entity.dart';
 
 class RegistrarMiembroScreen extends StatefulWidget {
   const RegistrarMiembroScreen({super.key});
@@ -8,112 +10,91 @@ class RegistrarMiembroScreen extends StatefulWidget {
 }
 
 class _RegistrarMiembroScreenState extends State<RegistrarMiembroScreen> {
-  // Controladores de los campos
-  final TextEditingController nombreController = TextEditingController();
-  final TextEditingController documentoController = TextEditingController();
-  final TextEditingController comunidadController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
-  String tipoCertificacion = 'Salud'; // valor inicial
+  final TextEditingController _nombreController = TextEditingController();
+  final TextEditingController _documentoController = TextEditingController();
+  final TextEditingController _comunidadController = TextEditingController();
 
-  // Simulación de guardado (a futuro será BD)
-  void guardarMiembro() {
-    String nombre = nombreController.text;
-    String documento = documentoController.text;
-    String comunidad = comunidadController.text;
+  Future<void> _guardarMiembro() async {
+    if (_formKey.currentState!.validate()) {
+      final db = await $FloorAppDatabase.databaseBuilder('wayuu.db').build();
 
-    if (nombre.isEmpty || documento.isEmpty || comunidad.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor completa todos los campos')),
+      final miembro = Miembro(
+        nombre: _nombreController.text,
+        documento: _documentoController.text,
+        comunidad: _comunidadController.text,
       );
-      return;
+
+      await db.miembroDao.insertMiembro(miembro);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Miembro guardado correctamente"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Miembro "$nombre" registrado correctamente ✅')),
-    );
-
-    // Limpiar los campos
-    nombreController.clear();
-    documentoController.clear();
-    comunidadController.clear();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registrar Miembro'),
-        backgroundColor: Colors.redAccent,
+        title: const Text("Registrar Miembro"),
+        backgroundColor: Colors.orange,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Complete la información del miembro:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: nombreController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre completo',
-                border: OutlineInputBorder(),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _nombreController,
+                decoration: const InputDecoration(
+                  labelText: "Nombre",
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) => v!.isEmpty ? "Ingrese el nombre" : null,
               ),
-            ),
-            const SizedBox(height: 15),
-            TextField(
-              controller: documentoController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Número de documento',
-                border: OutlineInputBorder(),
+
+              const SizedBox(height: 15),
+
+              TextFormField(
+                controller: _documentoController,
+                decoration: const InputDecoration(
+                  labelText: "Documento",
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) => v!.isEmpty ? "Ingrese el documento" : null,
               ),
-            ),
-            const SizedBox(height: 15),
-            TextField(
-              controller: comunidadController,
-              decoration: const InputDecoration(
-                labelText: 'Comunidad',
-                border: OutlineInputBorder(),
+
+              const SizedBox(height: 15),
+
+              TextFormField(
+                controller: _comunidadController,
+                decoration: const InputDecoration(
+                  labelText: "Comunidad",
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) => v!.isEmpty ? "Ingrese la comunidad" : null,
               ),
-            ),
-            const SizedBox(height: 15),
-            DropdownButtonFormField<String>(
-              value: tipoCertificacion,
-              decoration: const InputDecoration(
-                labelText: 'Tipo de certificación',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'Salud', child: Text('Salud')),
-                DropdownMenuItem(value: 'Educación', child: Text('Educación')),
-                DropdownMenuItem(value: 'Policía', child: Text('Policía')),
-                DropdownMenuItem(value: 'Administrativo', child: Text('Administrativo')),
-              ],
-              onChanged: (valor) {
-                setState(() {
-                  tipoCertificacion = valor!;
-                });
-              },
-            ),
-            const SizedBox(height: 25),
-            Center(
-              child: ElevatedButton.icon(
+
+              const SizedBox(height: 25),
+
+              ElevatedButton(
+                onPressed: _guardarMiembro,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  minimumSize: const Size(double.infinity, 50),
                 ),
-                icon: const Icon(Icons.save),
-                label: const Text(
-                  'Guardar Registro',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                onPressed: guardarMiembro,
+                child: const Text("Guardar Miembro"),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

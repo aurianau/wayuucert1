@@ -16,43 +16,48 @@ class LiderScreen extends StatelessWidget {
         backgroundColor: Colors.redAccent,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // BOTÓN REGISTRAR MIEMBRO
             ElevatedButton.icon(
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.orange,
-    minimumSize: const Size(double.infinity, 50),
-  ),
-  icon: const Icon(Icons.person_add),
-  label: const Text(
-    'Registrar Miembro',
-    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  ),
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const RegistrarMiembroScreen()),
-    );
-  },
-),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              icon: const Icon(Icons.person_add),
+              label: const Text(
+                'Registrar Miembro',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const RegistrarMiembroScreen()),
+                );
+              },
+            ),
 
             const SizedBox(height: 20),
+
+            // BOTÓN VER CENSO
             ElevatedButton.icon(
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.blueAccent,
-    minimumSize: const Size(double.infinity, 50),
-  ),
-  icon: const Icon(Icons.list),
-  label: const Text(
-    'Ver Censo',
-    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  ),
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const VerCensoScreen()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              icon: const Icon(Icons.list),
+              label: const Text(
+                'Ver Censo',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const VerCensoScreen()),
                 );
               },
             ),

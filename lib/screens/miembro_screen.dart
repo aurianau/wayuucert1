@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../database/app_database.dart';
+import '../database/entities/miembro_entity.dart';
+
 class MiembroScreen extends StatefulWidget {
   const MiembroScreen({super.key});
 
@@ -19,43 +22,56 @@ class _MiembroScreenState extends State<MiembroScreen> {
   Future<void> _generarCertificacion() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final db =
+        await $FloorAppDatabase.databaseBuilder('wayuu.db').build();
+
+    // Validar si el miembro existe en el censo
+    final miembro =
+        await db.miembroDao.findByDocumento(_documentoController.text);
+
+    if (miembro == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El miembro NO está registrado en el censo'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Crear PDF
     final pdf = pw.Document();
 
     pdf.addPage(
       pw.Page(
         build: (pw.Context context) => pw.Center(
-          child: pw.Container(
-            padding: const pw.EdgeInsets.all(24),
-            child: pw.Column(
-              mainAxisAlignment: pw.MainAxisAlignment.center,
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Center(
-                  child: pw.Text(
-                    'CERTIFICACIÓN COMUNIDAD WAYUU',
-                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
-                  ),
-                ),
-                pw.SizedBox(height: 20),
-                pw.Text('Se certifica que:', style: pw.TextStyle(fontSize: 16)),
-                pw.SizedBox(height: 8),
-                pw.Text('Nombre: ${_nombreController.text}', style: pw.TextStyle(fontSize: 14)),
-                pw.Text('Documento: ${_documentoController.text}', style: pw.TextStyle(fontSize: 14)),
-                pw.Text('Comunidad: ${_comunidadController.text}', style: pw.TextStyle(fontSize: 14)),
-                pw.SizedBox(height: 10),
-                pw.Text('Tipo de certificación: $_tipoCertificacion', style: pw.TextStyle(fontSize: 14)),
-                pw.SizedBox(height: 30),
-                pw.Text('Emitido por: Dirección de Asuntos Indígenas', style: pw.TextStyle(fontSize: 14)),
-                pw.SizedBox(height: 10),
-                pw.Text('Fecha de emisión: ${DateTime.now().toLocal()}'),
-              ],
-            ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'CERTIFICACIÓN COMUNIDAD WAYUU',
+                style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text('Se certifica que:'),
+              pw.SizedBox(height: 10),
+              pw.Text('Nombre: ${miembro.nombre}'),
+              pw.Text('Documento: ${miembro.documento}'),
+              pw.Text('Comunidad: ${miembro.comunidad}'),
+              pw.SizedBox(height: 10),
+              pw.Text('Tipo de certificación: $_tipoCertificacion'),
+              pw.SizedBox(height: 30),
+              pw.Text('Emitido por la autoridad tradicional'),
+            ],
           ),
         ),
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    // Mostrar PDF
+    await Printing.layoutPdf(
+      onLayout: (format) async => pdf.save(),
+    );
   }
 
   @override
@@ -66,44 +82,22 @@ class _MiembroScreenState extends State<MiembroScreen> {
         backgroundColor: Colors.green,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              const Text(
-                'Generar Certificación',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _nombreController,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre completo',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value!.isEmpty ? 'Ingrese su nombre' : null,
-              ),
-              const SizedBox(height: 12),
               TextFormField(
                 controller: _documentoController,
                 decoration: const InputDecoration(
-                  labelText: 'Número de documento',
+                  labelText: 'Documento',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value!.isEmpty ? 'Ingrese su documento' : null,
+                validator: (v) =>
+                    v!.isEmpty ? 'Ingrese su documento' : null,
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _comunidadController,
-                decoration: const InputDecoration(
-                  labelText: 'Comunidad',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value!.isEmpty ? 'Ingrese su comunidad' : null,
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 15),
+
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   labelText: 'Tipo de certificación',
@@ -115,22 +109,23 @@ class _MiembroScreenState extends State<MiembroScreen> {
                   DropdownMenuItem(value: 'Policía', child: Text('Policía')),
                   DropdownMenuItem(value: 'Administrativa', child: Text('Administrativa')),
                 ],
-                onChanged: (value) => setState(() => _tipoCertificacion = value),
-                validator: (value) => value == null ? 'Seleccione un tipo' : null,
+                onChanged: (value) => _tipoCertificacion = value,
+                validator: (v) => v == null ? 'Seleccione un tipo' : null,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
+
               ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  minimumSize: const Size(double.infinity, 50),
-                ),
                 icon: const Icon(Icons.picture_as_pdf),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: Colors.green,
+                ),
                 label: const Text(
-                  'Generar Certificación PDF',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  "Generar Certificación PDF",
+                  style: TextStyle(fontSize: 18),
                 ),
                 onPressed: _generarCertificacion,
-              ),
+              )
             ],
           ),
         ),
@@ -138,4 +133,3 @@ class _MiembroScreenState extends State<MiembroScreen> {
     );
   }
 }
-
